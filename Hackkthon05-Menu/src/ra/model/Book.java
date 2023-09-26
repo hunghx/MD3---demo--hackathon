@@ -1,4 +1,4 @@
-package ra.bussiness;
+package ra.model;
 
 import java.util.Scanner;
 

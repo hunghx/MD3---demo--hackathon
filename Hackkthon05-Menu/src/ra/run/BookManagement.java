@@ -1,14 +1,13 @@
 package ra.run;
 
-import ra.bussiness.Book;
+import ra.model.Book;
+import ra.service.BookService;
 
 import java.util.Arrays;
 import java.util.Scanner;
 
 public class BookManagement {
-    private static final int MAX_BOOKS = 20;
-    private static Book[] books = new Book[MAX_BOOKS];
-    private static int bookCount = 0;
+    private static final BookService bookService = new BookService();
 
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
@@ -43,7 +42,7 @@ public class BookManagement {
                     searchBooks(scanner);
                     break;
                 case 6:
-                    editBook(scanner);
+//                    editBook(scanner);
                     break;
                 case 7:
                     System.out.println("Thoát khỏi chương trình.");
@@ -59,7 +58,7 @@ public class BookManagement {
         int numBooks = scanner.nextInt();
         scanner.nextLine();
 
-        if (bookCount + numBooks > MAX_BOOKS) {
+        if (bookService.getBookCount() + numBooks > bookService.getMAX_BOOKS()) {
             System.out.println("Không thể thêm nhiều sách hơn. Đã đạt công suất tối đa.");
             return;
         }
@@ -68,82 +67,67 @@ public class BookManagement {
             Book book = new Book();
             System.out.println("Nhập thông tin cho Sách" + (i + 1) + ":");
             book.inputData();
-            books[bookCount] = book;
-            bookCount++;
+            bookService.addNewBook(book);
         }
 
         System.out.println("Thêm " + numBooks + " sach thành công");
     }
 
     private static void displayAllBooks() {
-        if (bookCount == 0) {
+        if (bookService.getBookCount() == 0) {
             System.out.println("Không có sách trong thư viện.");
             return;
         }
 
         System.out.println("Danh sách sách trong thư viện:");
-        for (int i = 0; i < bookCount; i++) {
+        for (int i = 0; i < bookService.getBookCount(); i++) {
             System.out.println("------------------");
-            books[i].displayData();
+            bookService.findAll()[i].displayData();
         }
     }
 
     private static void sortBooks() {
-        if (bookCount == 0) {
+        if (bookService.getBookCount() == 0) {
             System.out.println("Không có sách trong thư viện.");
             return;
         }
-
-        Arrays.sort(books, 0, bookCount, (book1, book2) -> Float.compare(book1.getInterest(), book2.getInterest()));
-
-        System.out.println("Sách được sắp xếp theo lợi nhuận tăng dần:");
-        for (int i = 0; i < bookCount; i++) {
-            System.out.println("------------------");
-            books[i].displayData();
-        }
+        bookService.sortByProfit();
+        System.out.println("đã sắp xếp");
     }
 
     private static void deleteBook(Scanner scanner) {
-        if (bookCount == 0) {
+        if (bookService.getBookCount() == 0) {
             System.out.println("không có sach trong thư viên");
             return;
         }
 
         System.out.print("Nhập id sách cần xoá ");
         int bookId = scanner.nextInt();
-        scanner.nextLine();
-
-        int bookIndex = findBookIndexById(bookId);
-        if (bookIndex == -1) {
-            System.out.println("không tìm thấy sách trong thư viên ");
-            return;
-        }
-
-         for (int i = bookIndex; i < bookCount - 1; i++) {
-            books[i] = books[i + 1];
-        }
-
-        bookCount--;
-        System.out.println(" sách có  id " + bookId + " đã xoá thành công.");
+         boolean check = bookService.deleteById(bookId);
+         if (check) {
+             System.out.println(" sách có  id " + bookId + " đã xoá thành công.");
+         }else {
+             System.out.println("Không tìm thấy id");
+         }
     }
 
     private static void searchBooks(Scanner scanner) {
-        if (bookCount == 0) {
+        if (bookService.getBookCount() == 0) {
             System.out.println("không có sách trong thư viên");
             return;
         }
 
         System.out.print("Nhập truy vấn tìm kiếm (tên hoặc mô tả): ");
+         scanner.nextLine();
         String query = scanner.nextLine();
 
         System.out.println("Kết quả tìm kiếm:\n");
         boolean found = false;
-        for (int i = 0; i < bookCount; i++) {
-            if (books[i].getBookName().toLowerCase().contains(query.toLowerCase()) ||
-                    books[i].getDescriptions().toLowerCase().contains(query.toLowerCase())) {
+        Book[] listSearch = bookService.searchBookByName(query);
+        for (int i = 0; i < listSearch.length; i++) {
+            if(listSearch[i]!=null){
+                listSearch[i].displayData();
                 found = true;
-                System.out.println("------------------");
-                books[i].displayData();
             }
         }
 
@@ -152,37 +136,37 @@ public class BookManagement {
         }
     }
 
-    private static void editBook(Scanner scanner) {
-        if (bookCount == 0) {
-            System.out.println("không có sách trong thư viên");
-            return;
-        }
-
-        System.out.print("Nhập ID sách để sửa đổi: ");
-        int bookId = scanner.nextInt();
-        scanner.nextLine();
-
-        int bookIndex = findBookIndexById(bookId);
-        if (bookIndex == -1) {
-            System.out.println("sách không tôn tại");
-            return;
-        }
-
-        System.out.println("Sửa đổi cuốn sách với ID " + bookId + ":");
-        books[bookIndex].displayData();
-        System.out.println("Nhập thông tin mới:");
-
-        books[bookIndex].inputData();
-
-        System.out.println("Thông tin sách sửa đổi thành công.");
-    }
-
-    private static int findBookIndexById(int bookId) {
-        for (int i = 0; i < bookCount; i++) {
-            if (books[i].getBookId() == bookId) {
-                return i;
-            }
-        }
-        return -1;
-    }
+//    private static void editBook(Scanner scanner) {
+//        if (bookCount == 0) {
+//            System.out.println("không có sách trong thư viên");
+//            return;
+//        }
+//
+//        System.out.print("Nhập ID sách để sửa đổi: ");
+//        int bookId = scanner.nextInt();
+//        scanner.nextLine();
+//
+//        int bookIndex = findBookIndexById(bookId);
+//        if (bookIndex == -1) {
+//            System.out.println("sách không tôn tại");
+//            return;
+//        }
+//
+//        System.out.println("Sửa đổi cuốn sách với ID " + bookId + ":");
+//        books[bookIndex].displayData();
+//        System.out.println("Nhập thông tin mới:");
+//
+//        books[bookIndex].inputData();
+//
+//        System.out.println("Thông tin sách sửa đổi thành công.");
+//    }
+//
+//    private static int findBookIndexById(int bookId) {
+//        for (int i = 0; i < bookCount; i++) {
+//            if (books[i].getBookId() == bookId) {
+//                return i;
+//            }
+//        }
+//        return -1;
+//    }
 }
